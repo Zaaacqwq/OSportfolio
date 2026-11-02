@@ -241,7 +241,7 @@ export default function Finder({ params }: AppProps) {
             </>
           )}
           <span className="ml-auto">
-            {section === "applications" ? APP_LIST.length : items.length} items · Press Space for Quick Look
+            {section === "applications" ? APP_LIST.length : items.length} items<span className="hidden sm:inline"> · Press Space for Quick Look</span>
           </span>
         </div>
       </div>

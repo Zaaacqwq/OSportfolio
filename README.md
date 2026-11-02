@@ -1,91 +1,101 @@
-# OS Portfolio
+# Zac's Mac — OS Portfolio
 
-一个 macOS 风格的交互式个人作品集网站 —— 在浏览器里打开一台“桌面电脑”。
+My portfolio, dressed up as **macOS 26 Tahoe**: a lock screen, menu bar with real menus, a glass Dock, Spotlight,
+Launchpad, Control Center, Notification Center, desktop widgets, and every project shown as an app.
 
-Built with **Next.js 16 · React 19 · TypeScript · Tailwind CSS 4**.
+Built with **Next.js 16 · React 19 · TypeScript · Tailwind CSS 4**. All icons and wallpapers are original and drawn in
+code — no Apple assets.
 
-## ✨ Features
+## ✨ What's inside
 
-- **开机动画**（每个会话播放一次，点击可跳过；菜单里的 *Restart…* 可重播）
-- **菜单栏**：头像 + 名字下拉菜单、当前应用名、邮箱、日期时间
-- **窗口管理**：拖动标题栏移动、八个方向缩放、双击标题栏最大化、红黄绿按钮（关闭 / 最小化 / 缩放）、点击置顶
-- **Dock**：鼠标悬停放大、打开时弹跳、已打开应用下方显示小圆点、再次点击可最小化
-- **内置应用**
-  | App | 内容 |
-  | --- | --- |
-  | About Me | 个人简介、技能、经历、教育（Finder 风格侧边栏） |
-  | Projects | 项目文件夹，双击打开详情 |
-  | Launchpad | 社交账号 + 应用入口 |
-  | Terminal | 可交互终端：`help` `about` `projects` `skills` `contact` `open <app>` `ls` `cat` `wallpaper <name>`…支持 ↑↓ 历史和 Tab 补全 |
-  | Browser | 起始页：收藏夹 + 项目链接 |
-  | Mail | 联系表单（通过 `mailto:` 打开访客的邮件客户端，无需后端） |
-  | Resume.pdf | 内嵌 PDF，或根据配置自动生成在线简历 |
-  | System Settings | 切换壁纸（会记住选择） |
-  | Trash | 小彩蛋 |
-- **6 张代码生成的壁纸**，无需任何图片素材
-- **移动端适配**：窗口全屏显示，桌面图标横排，Dock 可横向滚动
+| | |
+| --- | --- |
+| **System** | Boot → lock screen → desktop · menu bar with per‑app menus (File/Edit/View/Go/Window/Help) · Z menu (About This Mac, Lock Screen, Restart…) · Spotlight (`⌘K` / `Ctrl K`) · fullscreen Launchpad · Control Center (Dark Mode, brightness, wallpaper) · Notification Center with widgets · right‑click menus · drag‑select on the desktop |
+| **Windows** | Unified toolbars, glass sidebars, traffic lights, drag / resize from any edge, double‑click to zoom, open & minimize animations to the Dock |
+| **Dock** | Glass dock with magnification, bounce, running indicators, tooltips, right‑click menus |
+| **Appearance** | Light / dark (follows the system, remembers your choice); each wallpaper has a day and night variant |
+| **Mobile** | iOS‑style home screen; apps open fullscreen |
 
-## 🚀 Getting started
+### How projects are shown
+
+Every project is an app, opened in the way that fits it:
+
+| Project type | Where it opens |
+| --- | --- |
+| **VibeIsland** (macOS notch app) | A live **notch** in the menu bar — hover it to see real screenshots — plus an App‑Store‑style product page |
+| **iOS apps** (DoFocus, SwipeClean, Fridgy, Cents…) | **Simulator** — an iPhone frame with screenshots (or an illustrative mock‑up until screenshots are added) |
+| **Web projects** (betterUWWorks, ZacBlog, Particle Portfolio…) | **Safari** — the live site in a tab when it allows embedding, otherwise a project page |
+| **AI / agent projects** (SlayTheSpireRL, BalatroMCP, autoUWLearn…) | **Terminal** — `project <name>` prints the README‑style summary and the architecture |
+| Everything | **Finder** — Icons / List / Columns / Gallery views, tags by category, **Quick Look** with `Space` |
+
+Private repositories are shown with a 🔒 badge and no source link.
+
+## 🚀 Run it
 
 ```bash
 npm install
-npm run dev
+npm run dev        # http://localhost:3000
 ```
-
-打开 <http://localhost:3000>。
 
 ```bash
-npm run build && npm start   # 生产构建
-npm run lint                  # TypeScript 类型检查
+npm run build && npm start
+npm run lint       # TypeScript check
 ```
 
-## ✏️ 换成你自己的内容
+## ✏️ Editing content
 
-几乎所有内容都在 **`src/config/profile.ts`** 一个文件里：
-
-- `name` / `initials` / `title` / `location` / `email`
-- `avatar`：把头像放到 `public/avatar.png`，然后填 `"/avatar.png"`
-- `resumePdf`：把简历放到 `public/resume.pdf`，然后填 `"/resume.pdf"`（留空则自动生成在线简历）
-- `bio`、`skills`、`experience`、`education`
-- `socials`：支持 `github` `linkedin` `x` `instagram` `dribbble` `email` `website` `bilibili` `wechat`
-- `projects`：每个项目一个文件夹，可以设置颜色和链接
-
-其他可调整的地方：
-
-| 想改什么 | 文件 |
+| What | Where |
 | --- | --- |
-| Dock 顺序 / 桌面图标 / 新增应用 | `src/lib/apps.tsx` |
-| 壁纸（或添加自己的图片壁纸） | `src/lib/wallpapers.ts` |
-| 终端命令 | `src/components/apps/Terminal.tsx` |
-| 整体样式（毛玻璃、窗口、动画） | `src/app/globals.css` |
+| Name, bio, experience, skills, links, avatar, resume PDF | `src/config/profile.ts` |
+| Projects (copy, tech, links, category, how each one opens) | `src/config/projects.ts` |
+| Dock order, apps | `src/lib/apps.tsx` |
+| Menus | `src/lib/menus.ts` |
+| Wallpapers | `src/lib/wallpapers.ts` |
+| Colors, glass, window styling | `src/app/globals.css` |
 
-### 新增一个应用
+### Adding screenshots
 
-1. 在 `src/components/apps/` 下新建组件，例如 `Photos.tsx`
-2. 在 `src/lib/apps.tsx` 的 `AppId` 和 `APPS` 中注册（标题、图标、默认尺寸、组件）
-3. 把它加进 `DOCK` 或 `DESKTOP_ICONS`
+Drop images into `public/projects/<slug>/` — they're picked up automatically at build time (sorted by filename):
+
+- The first image becomes the project's cover in Finder, Quick Look, Safari and the Featured widget
+  (or set `cover` in `projects.ts`).
+- Images with **`screen`** in the filename (e.g. `screen-1.png`, `screen-2.png`) are shown inside the iPhone in
+  **Simulator**. Use portrait iPhone screenshots.
+
+### Avatar & resume
+
+Put `avatar.jpg` and/or `resume.pdf` in `public/` and set `avatar: "/avatar.jpg"` / `resumePdf: "/resume.pdf"` in
+`profile.ts`. Without a PDF, Preview shows a resume generated from the profile data.
+
+## 🐙 GitHub data
+
+The GitHub app and the contributions widget use live data fetched on the server and refreshed every hour (ISR):
+the public repo list from the GitHub API, the contribution calendar from your public profile, and the latest
+VibeIsland release. If GitHub is unreachable the site falls back to the static numbers in `profile.ts`.
+Setting a `GITHUB_TOKEN` environment variable (no scopes needed) raises the API rate limit — optional.
+
+## ☁️ Deploy
+
+Import the repo on [Vercel](https://vercel.com/new) — no configuration needed.
 
 ## 📁 Structure
 
 ```
 src/
-├── app/                 # Next.js App Router（layout、page、全局样式）
-├── config/profile.ts    # ✏️ 你的个人信息
-├── context/             # 窗口管理器（打开/关闭/聚焦/最小化/最大化/壁纸）
-├── lib/                 # 应用注册表、壁纸、hooks
+├── app/                    layout (fonts, theme), page (fetches GitHub data), globals.css (design tokens)
+├── config/                 ✏️ profile.ts, projects.ts
+├── context/                System (windows, appearance, overlays, notifications), Data (GitHub + assets)
+├── lib/                    app registry, menus, wallpapers, GitHub fetchers, helpers
 └── components/
-    ├── Desktop.tsx      # 桌面：壁纸 + 标题 + 图标 + 窗口 + Dock
-    ├── MenuBar.tsx
-    ├── Dock.tsx
-    ├── Window.tsx       # 可拖动/缩放的窗口
-    ├── BootScreen.tsx
-    └── apps/            # 各个应用
+    ├── Desktop · MenuBar · Dock · Window · BootScreen
+    ├── chrome/             toolbar, sidebar, traffic lights
+    ├── system/             lock screen, Spotlight, Launchpad, Control/Notification Center, notch, widgets, menus
+    ├── apps/               Finder, Contacts, Safari, Mail, Notes, Terminal, Simulator, GitHub, Settings, Preview…
+    ├── icons/              original squircle app icons
+    └── mobile/             iOS‑style shell
 ```
-
-## ☁️ Deploy
-
-推荐部署到 [Vercel](https://vercel.com/new)：导入这个仓库即可，无需任何配置。
 
 ---
 
-Design inspired by the desktop‑metaphor portfolio idea (e.g. [fabiconcept/macintosh-os](https://github.com/fabiconcept/macintosh-os)); all code, icons and wallpapers here are original.
+Inspired by desktop‑metaphor portfolios such as [fabiconcept/macintosh-os](https://github.com/fabiconcept/macintosh-os).
+macOS, Finder, Safari and related names belong to Apple Inc.; this is an unaffiliated personal homage.

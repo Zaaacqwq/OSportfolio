@@ -178,7 +178,7 @@ export function Window({ win }: { win: WindowState }) {
         data-window={win.id}
         onPointerDown={() => focus(win.id)}
         className={[
-          "window absolute flex flex-col overflow-hidden",
+          "window absolute flex flex-col",
           active ? "window-active" : "",
           win.maximized ? "is-maximized" : "",
           closing ? "window-closing" : opening ? "window-opening" : "",
@@ -187,7 +187,7 @@ export function Window({ win }: { win: WindowState }) {
         ].join(" ")}
         style={style}
       >
-        <div className="relative flex min-h-0 flex-1 flex-col">{Content ? <Content params={win.params} /> : null}</div>
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]">{Content ? <Content params={win.params} /> : null}</div>
 
         {resizable && !win.maximized && (
           <>
