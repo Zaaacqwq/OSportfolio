@@ -15,7 +15,7 @@ import { LockScreen } from "./system/LockScreen";
 import { Spotlight } from "./system/Spotlight";
 import { Launchpad } from "./system/Launchpad";
 import { ControlCenter } from "./system/ControlCenter";
-import { NotificationCenter, Toasts } from "./system/NotificationCenter";
+import { NotificationCenter } from "./system/NotificationCenter";
 import { ContextMenu } from "./system/ContextMenu";
 import { CalendarWidget, ContributionsWidget, FeaturedWidget, MusicWidget, ProfileWidget } from "./system/Widgets";
 import { SpotifyHost } from "./music/SpotifyHost";
@@ -86,7 +86,7 @@ export function Desktop() {
       () =>
         sys.notify({
           title: "Welcome to Zac's Mac 👋",
-          body: "Press ⌘K to search, hover the notch to see VibeIsland, or open Finder to browse my projects.",
+          body: "Press ⌘K to search, hover the island at the top, or open Finder to browse my projects.",
           icon: "finder",
           onClick: () => sys.open("finder"),
         }),
@@ -263,7 +263,6 @@ export function Desktop() {
       {sys.overlay === "spotlight" && <Spotlight />}
       {sys.overlay === "control" && <ControlCenter />}
       {sys.overlay === "notifications" && <NotificationCenter />}
-      <Toasts />
       <ContextMenu />
 
       {!booting && sys.locked && <LockScreen background={background} onUnlock={handleUnlock} />}
