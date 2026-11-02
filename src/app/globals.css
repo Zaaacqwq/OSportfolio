@@ -258,11 +258,57 @@ a {
 .dock::-webkit-scrollbar {
   display: none;
 }
-.dock-item {
-  transition: width 90ms linear;
+/* Dock：slot 只改宽度；图标按最大尺寸渲染一次，由 scaler 的 transform 缩放（见 useDockMagnification） */
+.dock {
+  contain: layout style;
 }
-.dock-item .app-icon-box {
-  transition: width 90ms linear, height 90ms linear;
+.dock-slot {
+  flex: none;
+}
+.dock-bounce-layer {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 0;
+}
+.dock-scaler {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: block;
+  translate: -50% 0;
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+.dock-tooltip {
+  position: absolute;
+  left: 50%;
+  white-space: nowrap;
+  border-radius: 8px;
+  padding: 3px 10px;
+  font-size: 13px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 80ms ease-out;
+}
+.dock-tooltip[data-show="true"] {
+  opacity: 1;
+  transition: none;
+}
+.dock-dot {
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.7);
+  transition: opacity 0.2s;
+}
+[data-theme="dark"] .dock-dot {
+  background: rgba(255, 255, 255, 0.8);
 }
 .tooltip {
   background: var(--menu);
@@ -271,23 +317,40 @@ a {
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow: inset 0 0 0 0.5px var(--glass-border), 0 0 0 0.5px var(--glass-edge), 0 4px 16px rgba(0, 0, 0, 0.2);
 }
+/* 两次递减的弹跳：起跳 ease-out，下落 ease-in，像受重力 */
 @keyframes dock-bounce {
-  0%,
+  0% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  30% {
+    transform: translateY(-28px);
+    animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.4);
+  }
+  55% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  75% {
+    transform: translateY(-10px);
+    animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.4);
+  }
   100% {
     transform: translateY(0);
   }
-  25% {
-    transform: translateY(-26px);
-  }
-  50% {
-    transform: translateY(0);
-  }
-  70% {
-    transform: translateY(-10px);
-  }
 }
 .dock-bounce {
-  animation: dock-bounce 0.8s cubic-bezier(0.3, 0.7, 0.4, 1);
+  animation: dock-bounce 0.9s both;
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes dock-bounce-reduced {
+    50% {
+      opacity: 0.55;
+    }
+  }
+  .dock-bounce {
+    animation: dock-bounce-reduced 0.6s !important;
+  }
 }
 
 /* ============================================================
