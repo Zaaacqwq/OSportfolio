@@ -14,8 +14,11 @@ import { ContributionsWidget, ProfileWidget } from "../system/Widgets";
 import { Spotlight } from "../system/Spotlight";
 import { Toasts } from "../system/NotificationCenter";
 import { ContextMenu } from "../system/ContextMenu";
+import { SpotifyHost } from "../music/SpotifyHost";
+import { Artwork, TransportControls, ProgressBar } from "../music/MusicParts";
+import { useNowPlaying } from "@/lib/music/store";
 
-const GRID: AppId[] = ["about", "finder", "vibeisland", "simulator", "github", "notes", "preview", "settings"];
+const GRID: AppId[] = ["about", "finder", "music", "vibeisland", "github", "notes", "preview", "settings"];
 const DOCK: AppId[] = ["finder", "safari", "mail", "terminal"];
 
 function StatusBar() {
@@ -35,6 +38,7 @@ function StatusBar() {
 /** 手机上：类 iOS 的主屏幕，应用全屏打开 */
 export function MobileShell({ background }: { background: string }) {
   const sys = useSystem();
+  const now = useNowPlaying();
 
   // 手机上没有锁屏
   useEffect(() => {
@@ -74,9 +78,25 @@ export function MobileShell({ background }: { background: string }) {
         </div>
       </div>
 
+      {now.track && (
+        <div className="glass absolute inset-x-3 bottom-[100px] flex items-center gap-2.5 rounded-[18px] p-2 pr-1 text-fg" data-mini-player>
+          <button onClick={() => sys.open("music")} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
+            <Artwork track={now.track} size={40} rounded={8} />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[13.5px] font-semibold">{now.track.title}</span>
+              <span className="block truncate text-[11.5px] text-muted">{now.track.artist}</span>
+            </span>
+          </button>
+          <TransportControls size={17} btnClass="h-9 w-9" />
+          <div className="absolute inset-x-4 bottom-[1px]">
+            <ProgressBar showTime={false} className="!gap-0 [&>div]:!h-[4px]" />
+          </div>
+        </div>
+      )}
+
       <button
         onClick={() => sys.setOverlay("spotlight")}
-        className="absolute bottom-[112px] left-1/2 flex h-[30px] -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/25 px-4 text-[13px] font-medium text-white backdrop-blur-xl"
+        className={`absolute ${now.track ? "bottom-[170px]" : "bottom-[112px]"} left-1/2 flex h-[30px] -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/25 px-4 text-[13px] font-medium text-white backdrop-blur-xl`}
       >
         <LuSearch /> Search
       </button>
@@ -93,6 +113,7 @@ export function MobileShell({ background }: { background: string }) {
       {sys.overlay === "spotlight" && <Spotlight />}
       <Toasts />
       <ContextMenu />
+      <SpotifyHost />
     </main>
   );
 }

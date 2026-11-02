@@ -4,7 +4,7 @@ import { LuX } from "react-icons/lu";
 import { useSystem, type Toast } from "@/context/System";
 import { APPS } from "@/lib/apps";
 import { SystemIcon } from "../icons/AppIcons";
-import { CalendarWidget, ClockWidget, ContributionsWidget, FeaturedWidget, ProfileWidget } from "./Widgets";
+import { CalendarWidget, ClockWidget, ContributionsWidget, FeaturedWidget, MusicWidget, ProfileWidget } from "./Widgets";
 
 function ago(t: number) {
   const s = Math.round((Date.now() - t) / 1000);
@@ -83,6 +83,7 @@ export function NotificationCenter() {
             ))}
           </>
         )}
+        <MusicWidget solid size="medium" />
         <ProfileWidget solid />
         <div className="grid grid-cols-2 gap-3">
           <CalendarWidget solid />

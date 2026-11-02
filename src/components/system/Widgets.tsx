@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { LuArrowUpRight, LuMapPin } from "react-icons/lu";
+import { LuArrowUpRight, LuMapPin, LuPause, LuPlay, LuSkipForward } from "react-icons/lu";
+import { music, useNowPlaying } from "@/lib/music/store";
+import { useLibrary } from "@/lib/music/library";
+import { Artwork, Equalizer, ProgressBar } from "../music/MusicParts";
 import { profile } from "@/config/profile";
 import { FEATURED } from "@/config/projects";
 import { useData, useProjectImages } from "@/context/Data";
@@ -192,5 +195,72 @@ export function FeaturedWidget({ solid = false }: { solid?: boolean }) {
         ))}
       </div>
     </button>
+  );
+}
+
+/** 音乐小组件：small 放在桌面（方形），medium 放在通知中心 */
+export function MusicWidget({ solid = false, size = "small" }: { solid?: boolean; size?: "small" | "medium" }) {
+  const sys = useSystem();
+  const now = useNowPlaying();
+  const library = useLibrary();
+  const track = now.track ?? library[0]?.tracks[0] ?? null;
+  const playing = !!now.track && !now.isPaused;
+  const start = () => (now.track ? music.toggle() : library[0] && music.playQueue(library[0].tracks, 0));
+
+  const bg = track?.artwork ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={track.artwork} alt="" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60 blur-2xl" />
+  ) : (
+    <span className="absolute inset-0 opacity-50" style={{ background: `linear-gradient(135deg, ${(track?.accent ?? ["#ff375f", "#bf5af2"])[0]}, ${(track?.accent ?? ["#ff375f", "#bf5af2"])[1]})` }} />
+  );
+
+  const controls = (
+    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+      <button aria-label={playing ? "Pause" : "Play"} onClick={start} className="grid h-8 w-8 place-items-center rounded-full bg-black/10 text-[15px] hover:bg-black/20 dark:bg-white/15 dark:hover:bg-white/25">
+        {playing ? <LuPause /> : <LuPlay className="ml-0.5" />}
+      </button>
+      {now.track && (
+        <button aria-label="Next" onClick={music.next} className="grid h-8 w-8 place-items-center rounded-full text-[15px] hover:bg-black/10 dark:hover:bg-white/15">
+          <LuSkipForward />
+        </button>
+      )}
+    </div>
+  );
+
+  if (size === "medium") {
+    return (
+      <div role="button" tabIndex={0} onClick={() => sys.open("music")} className={`widget ${solid ? "widget-solid" : ""} relative block w-full p-4 text-left`} data-widget="music">
+        {bg}
+        <div className="relative flex items-center gap-3">
+          <Artwork track={track} size={64} rounded={10} />
+          <div className="min-w-0 flex-1">
+            <div className="text-[10.5px] font-semibold uppercase tracking-wide opacity-60">{now.track ? (playing ? "Now Playing" : "Paused") : "Music"}</div>
+            <div className="truncate text-[14px] font-semibold">{track?.title ?? "Nothing yet"}</div>
+            <div className="truncate text-[12px] opacity-70">{track?.artist}</div>
+          </div>
+          {controls}
+        </div>
+        {now.track && (
+          <div className="relative mt-2" onClick={(e) => e.stopPropagation()}>
+            <ProgressBar showTime={false} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div role="button" tabIndex={0} onClick={() => sys.open("music")} className={`widget ${solid ? "widget-solid" : ""} relative flex aspect-square flex-col p-3 text-left`} data-widget="music">
+      {bg}
+      <div className="relative flex items-start justify-between">
+        <Artwork track={track} size={52} rounded={9} />
+        {now.track && <Equalizer playing={playing} className="mt-1 text-[#ff375f]" />}
+      </div>
+      <div className="relative mt-auto min-w-0">
+        <div className="truncate text-[13px] font-semibold leading-tight">{track?.title ?? "Music"}</div>
+        <div className="truncate text-[11.5px] opacity-70">{now.track ? track?.artist : `Play “${library[0]?.name ?? "Music"}”`}</div>
+      </div>
+      <div className="relative mt-1.5">{controls}</div>
+    </div>
   );
 }

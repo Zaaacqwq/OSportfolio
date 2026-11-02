@@ -11,6 +11,9 @@ import { openProject } from "@/lib/openProject";
 import { SystemIcon } from "../icons/AppIcons";
 import { ProjectIcon } from "../icons/ProjectIcon";
 import { SOCIAL_META } from "../SocialIcon";
+import { useLibrary } from "@/lib/music/library";
+import { music } from "@/lib/music/store";
+import { Artwork } from "../music/MusicParts";
 
 interface Result {
   id: string;
@@ -43,6 +46,7 @@ export function Spotlight() {
 
   useEffect(() => inputRef.current?.focus(), []);
 
+  const library = useLibrary();
   const all = useMemo<Result[]>(() => {
     const apps: Result[] = (Object.keys(APPS) as AppId[])
       .filter((id) => APPS[id].listed)
@@ -116,8 +120,31 @@ export function Spotlight() {
         run: () => window.open(s.url, "_blank", "noopener"),
       };
     });
-    return [...apps, launchpad, ...projects, ...actions, ...links];
-  }, [sys]);
+    const songs: Result[] = library.flatMap((p) =>
+      p.tracks.map((t, i) => ({
+        id: `s-${p.id}-${t.id}`,
+        group: "Music",
+        title: t.title,
+        subtitle: `Song · ${t.artist} — ${p.name}`,
+        icon: <Artwork track={t} size={26} rounded={5} />,
+        haystack: `${t.title} ${t.artist} ${t.album ?? ""} song music`.toLowerCase(),
+        run: () => music.playQueue(p.tracks, i),
+      })),
+    );
+    const playlists: Result[] = library.map((p) => ({
+      id: `pl-${p.id}`,
+      group: "Music",
+      title: p.name,
+      subtitle: `Playlist · ${p.tracks.length} songs`,
+      icon: <Artwork accent={p.accent} size={26} rounded={5} />,
+      haystack: `${p.name} playlist music ${p.description}`.toLowerCase(),
+      run: () => {
+        sys.open("music", { playlist: p.id, nonce: Date.now() });
+        music.playQueue(p.tracks, 0);
+      },
+    }));
+    return [...apps, launchpad, ...projects, ...songs, ...playlists, ...actions, ...links];
+  }, [sys, library]);
 
   const results = useMemo(() => {
     const query = q.trim().toLowerCase();

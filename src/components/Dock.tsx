@@ -5,6 +5,7 @@ import { APPS, APP_TITLES, DOCK, type AppId } from "@/lib/apps";
 import { useSystem } from "@/context/System";
 import { SystemIcon } from "./icons/AppIcons";
 import { useDockMagnification } from "./useDockMagnification";
+import { useNowPlaying } from "@/lib/music/store";
 
 const BASE = 54;
 const MAX = 92;
@@ -13,6 +14,7 @@ const RANGE = 2.6 * (BASE + GAP);
 
 export function Dock() {
   const sys = useSystem();
+  const nowPlaying = useNowPlaying();
   const { windows, open, focus, activeId, minimize, overlay, setOverlay, showContextMenu, close } = sys;
   const [bouncing, setBouncing] = useState<AppId | null>(null);
   const { register, handlers, measure } = useDockMagnification({ base: BASE, max: MAX, range: RANGE });
@@ -79,7 +81,8 @@ export function Dock() {
         {items.map((id, i) => {
           if (id === "|") return <div key={`sep-${i}`} className="mx-1 h-[42px] w-px self-center bg-black/15 dark:bg-white/20" />;
           const app = APPS[id];
-          const isOpen = windows.some((w) => w.id === id) || (id === "launchpad" && overlay === "launchpad");
+          const isOpen =
+            windows.some((w) => w.id === id) || (id === "launchpad" && overlay === "launchpad") || (id === "music" && !!nowPlaying.track);
           const title = APP_TITLES[id] && id === "preview" ? "Resume.pdf" : app.name;
           return (
             <button

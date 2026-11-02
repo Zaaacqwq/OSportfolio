@@ -13,6 +13,7 @@ import Preview from "@/components/apps/Resume";
 import Trash from "@/components/apps/Trash";
 import VibeIslandApp from "@/components/apps/VibeIslandApp";
 import AboutMac from "@/components/apps/AboutMac";
+import Music from "@/components/apps/Music";
 
 export type AppId =
   | "finder"
@@ -28,7 +29,8 @@ export type AppId =
   | "preview"
   | "trash"
   | "vibeisland"
-  | "aboutmac";
+  | "aboutmac"
+  | "music";
 
 export interface AppProps {
   params?: Record<string, unknown>;
@@ -62,6 +64,7 @@ export const APPS: Record<AppId, AppDef> = {
   settings: { id: "settings", name: "System Settings", icon: "settings", size: { w: 760, h: 540 }, kind: "window", component: Settings, listed: true, keywords: "wallpaper appearance dark mode preferences" },
   preview: { id: "preview", name: "Preview", icon: "preview", size: { w: 720, h: 720 }, kind: "window", component: Preview, listed: true, keywords: "resume cv pdf" },
   trash: { id: "trash", name: "Trash", icon: "trash", size: { w: 620, h: 400 }, kind: "window", component: Trash, listed: false },
+  music: { id: "music", name: "Music", icon: "music", size: { w: 960, h: 620 }, kind: "window", component: Music, listed: true, keywords: "songs spotify playlist player audio" },
   vibeisland: { id: "vibeisland", name: "VibeIsland", icon: "vibeisland", size: { w: 980, h: 660 }, kind: "window", component: VibeIslandApp, listed: true, keywords: "notch macos app agents" },
   aboutmac: { id: "aboutmac", name: "Finder", icon: "aboutmac", size: { w: 300, h: 470 }, resizable: false, kind: "window", component: AboutMac, listed: false },
 };
@@ -83,6 +86,7 @@ export const DOCK: (AppId | "|")[] = [
   "notes",
   "terminal",
   "simulator",
+  "music",
   "github",
   "settings",
   "|",

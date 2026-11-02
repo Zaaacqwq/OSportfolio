@@ -14,7 +14,8 @@ code — no Apple assets.
 | **Windows** | Unified toolbars, glass sidebars, traffic lights, drag / resize from any edge, double‑click to zoom, open & minimize animations to the Dock |
 | **Dock** | Glass dock with magnification, bounce, running indicators, tooltips, right‑click menus |
 | **Appearance** | Light / dark (follows the system, remembers your choice); each wallpaper has a day and night variant |
-| **Mobile** | iOS‑style home screen; apps open fullscreen |
+| **Music** | Apple‑Music‑style player powered by Spotify embeds — Now Playing in the notch, Control Center and a desktop widget, Spotlight/Terminal (`play`, `np`) control, Media Session keys |
+| **Mobile** | iOS‑style home screen; apps open fullscreen; mini player above the Dock |
 
 ### How projects are shown
 
@@ -61,6 +62,17 @@ Drop images into `public/projects/<slug>/` — they're picked up automatically a
   (or set `cover` in `projects.ts`).
 - Images with **`screen`** in the filename (e.g. `screen-1.png`, `screen-2.png`) are shown inside the iPhone in
   **Simulator**. Use portrait iPhone screenshots.
+
+### Music
+
+Edit `src/config/music.ts`: each playlist is your own grouping of Spotify tracks. In Spotify use
+**Share → Copy Song Link**, paste it into `spotify`, and fill in `title` / `artist` (album artwork is fetched
+automatically through Spotify's public oEmbed endpoint, refreshed hourly).
+
+Playback runs through Spotify's official embed (iFrame API), loaded only after the first press of Play.
+Visitors signed in to Spotify in their browser hear full songs; everyone else gets 30‑second previews. If a
+browser blocks autoplay (Safari, iOS), a small Spotify card appears asking for one tap — after that every control
+works. Add `?mockPlayer` to the URL to test the UI with a fake player.
 
 ### Avatar & resume
 

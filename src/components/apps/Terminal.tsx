@@ -8,6 +8,8 @@ import { APPS, type AppId, type AppProps } from "@/lib/apps";
 import { WALLPAPERS } from "@/lib/wallpapers";
 import { openProject } from "@/lib/openProject";
 import { Toolbar } from "../chrome/WindowChrome";
+import { useLibrary } from "@/lib/music/library";
+import { formatTime, music } from "@/lib/music/store";
 
 interface Line {
   id: number;
@@ -27,10 +29,11 @@ const FILES: Record<string, string> = {
   "motto.txt": profile.motto,
 };
 
-const COMMANDS = ["help", "about", "whoami", "neofetch", "projects", "project", "open", "skills", "experience", "contact", "ls", "cat", "tree", "wallpaper", "theme", "date", "echo", "clear", "history", "sudo", "exit"];
+const COMMANDS = ["help", "about", "whoami", "neofetch", "projects", "project", "open", "skills", "experience", "contact", "ls", "cat", "tree", "wallpaper", "theme", "date", "echo", "clear", "history", "sudo", "exit", "play", "pause", "next", "np"];
 
 export default function Terminal({ params }: AppProps) {
   const sys = useSystem();
+  const library = useLibrary();
   const [lines, setLines] = useState<Line[]>(() => [
     { id: 0, content: <span className="text-white/45">Last login: {new Date().toDateString()} on ttys001</span> },
     {
@@ -144,6 +147,7 @@ export default function Terminal({ params }: AppProps) {
               ["ls · cat · tree", "browse files"],
               ["wallpaper <name>", "change the wallpaper"],
               ["theme dark|light", "change appearance"],
+              ["play [song|playlist]", "play music · pause · next · np"],
               ["clear", "clear the screen (⌃L)"],
             ].map(([c, d]) => (
               <div key={c} className="contents">
@@ -304,6 +308,58 @@ export default function Terminal({ params }: AppProps) {
           push(<span>Appearance set to {arg}.</span>);
         } else push(<span>Usage: theme dark|light</span>);
         break;
+      case "play": {
+        if (!arg) {
+          if (music.getNow().track) {
+            music.play();
+            push(<span className="text-white/55">Resumed.</span>);
+          } else if (library[0]) {
+            music.playQueue(library[0].tracks, 0);
+            push(<span>♪ Playing playlist <C>{library[0].name}</C></span>);
+          }
+          break;
+        }
+        const a = arg.toLowerCase();
+        const pl = library.find((p) => p.name.toLowerCase() === a || p.id === a);
+        if (pl) {
+          music.playQueue(pl.tracks, 0);
+          push(<span>♪ Playing playlist <C>{pl.name}</C> ({pl.tracks.length} songs)</span>);
+          break;
+        }
+        for (const p of library) {
+          const i = p.tracks.findIndex((t) => `${t.title} ${t.artist}`.toLowerCase().includes(a));
+          if (i >= 0) {
+            music.playQueue(p.tracks, i);
+            push(<span>♪ Playing <C>{p.tracks[i].title}</C> — {p.tracks[i].artist}</span>);
+            break;
+          }
+          if (p === library[library.length - 1]) push(<Err>play: no song or playlist matching “{arg}”</Err>);
+        }
+        break;
+      }
+      case "pause":
+        music.pause();
+        push(<span className="text-white/55">Paused.</span>);
+        break;
+      case "next":
+        music.next();
+        push(<span className="text-white/55">Skipped.</span>);
+        break;
+      case "np": {
+        const n = music.getNow();
+        const pr = music.getProgress();
+        if (!n.track) push(<span className="text-white/55">Nothing playing. Try <C>play</C>.</span>);
+        else
+          push(
+            <span>
+              {n.isPaused ? "⏸" : "▶"} <b className="text-white">{n.track.title}</b> — {n.track.artist}{" "}
+              <span className="text-white/45">
+                [{formatTime(pr.position)} / {formatTime(pr.duration)}]{n.isPreview ? " preview" : ""}
+              </span>
+            </span>,
+          );
+        break;
+      }
       case "date":
         push(<span>{new Date().toString()}</span>);
         break;

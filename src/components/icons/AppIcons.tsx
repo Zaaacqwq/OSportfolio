@@ -24,7 +24,8 @@ export type IconName =
   | "trash"
   | "vibeisland"
   | "aboutmac"
-  | "drive";
+  | "drive"
+  | "music";
 
 /** 外层：超椭圆裁剪 + 顶部高光 + 细描边 */
 function Squircle({ children, id }: { children: ReactNode; id: string }) {
@@ -323,6 +324,21 @@ function VibeIsland({ id }: { id: string }) {
   );
 }
 
+function Music({ id }: { id: string }) {
+  return (
+    <Squircle id={id}>
+      <defs>
+        <Grad id={`${id}-bg`} from="#ff6b81" to="#e8204a" />
+      </defs>
+      <rect width="100" height="100" fill={`url(#${id}-bg)`} />
+      <path
+        d="M41 69.5a8.5 8.5 0 1 1-6-8.1V31.6l34-7v35.9a8.5 8.5 0 1 1-6-8.1V37.9l-22 4.6z"
+        fill="#fff"
+      />
+    </Squircle>
+  );
+}
+
 function AboutMac({ id }: { id: string }) {
   return (
     <Squircle id={id}>
@@ -365,6 +381,7 @@ const MAP: Record<IconName, (p: { id: string }) => ReactNode> = {
   vibeisland: VibeIsland,
   aboutmac: AboutMac,
   drive: Drive,
+  music: Music,
 };
 
 export function SystemIcon({ name, size = 56, className = "" }: { name: IconName; size?: number; className?: string }) {

@@ -202,7 +202,7 @@ function StartPage({ onOpen }: { onOpen: (slug: string) => void }) {
         <h2 className="mt-10 font-display text-[22px] font-bold">Privacy Report</h2>
         <div className="card mt-3 flex items-center gap-3 p-4 text-[13px] text-fg-2">
           <LuShieldCheck className="text-[28px] text-accent" />
-          This portfolio uses no trackers, no cookies and no analytics. It&apos;s just a website pretending to be a Mac.
+          No trackers and no analytics. Spotify is only loaded when you press play in Music. It&apos;s just a website pretending to be a Mac.
         </div>
       </div>
     </div>

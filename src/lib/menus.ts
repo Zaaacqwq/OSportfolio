@@ -5,6 +5,7 @@ import { WALLPAPERS } from "@/lib/wallpapers";
 import { APPS, APP_TITLES, type AppId } from "./apps";
 import type { MenuDef, MenuEntry } from "./menuTypes";
 import { openProject } from "./openProject";
+import { music } from "./music/store";
 
 const S = "separator" as const;
 
@@ -167,5 +168,30 @@ export function appMenus(sys: SystemApi, active: AppId | null): { appName: strin
       };
   }
 
-  return { appName, menus: [appMenu, file, edit, view, go, windowMenu(sys, active), helpMenu(sys)] };
+  const controls: MenuDef = {
+    title: "Controls",
+    items: [
+      { label: "Play / Pause", shortcut: "Space", action: music.toggle },
+      { label: "Next", shortcut: "⌘→", action: music.next },
+      { label: "Previous", shortcut: "⌘←", action: music.prev },
+      S,
+      { label: "Go Forward 10s", shortcut: "→", action: () => music.skipBy(10_000) },
+      { label: "Go Back 10s", shortcut: "←", action: () => music.skipBy(-10_000) },
+      S,
+      { label: "Shuffle", checked: music.getNow().shuffle, action: () => music.setShuffle(!music.getNow().shuffle) },
+      {
+        label: "Repeat",
+        submenu: (["off", "all", "one"] as const).map((r) => ({
+          label: r === "off" ? "Off" : r === "all" ? "All" : "One",
+          checked: music.getNow().repeat === r,
+          action: () => {
+            while (music.getNow().repeat !== r) music.cycleRepeat();
+          },
+        })),
+      },
+    ],
+  };
+
+  const menus = [appMenu, file, edit, view, go, ...(active === "music" ? [controls] : []), windowMenu(sys, active), helpMenu(sys)];
+  return { appName, menus };
 }

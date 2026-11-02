@@ -17,7 +17,8 @@ import { Launchpad } from "./system/Launchpad";
 import { ControlCenter } from "./system/ControlCenter";
 import { NotificationCenter, Toasts } from "./system/NotificationCenter";
 import { ContextMenu } from "./system/ContextMenu";
-import { CalendarWidget, ClockWidget, ContributionsWidget, FeaturedWidget, ProfileWidget } from "./system/Widgets";
+import { CalendarWidget, ContributionsWidget, FeaturedWidget, MusicWidget, ProfileWidget } from "./system/Widgets";
+import { SpotifyHost } from "./music/SpotifyHost";
 import { MobileShell } from "./mobile/MobileShell";
 
 const BOOT_KEY = "osp:booted";
@@ -210,8 +211,8 @@ export function Desktop() {
           <ProfileWidget />
           <ContributionsWidget />
           <div className="grid grid-cols-2 gap-4">
+            <MusicWidget />
             <CalendarWidget />
-            <ClockWidget />
           </div>
           <FeaturedWidget />
         </div>
@@ -256,6 +257,7 @@ export function Desktop() {
 
       <MenuBar onRestart={restart} />
       <Dock />
+      <SpotifyHost />
 
       {lpMounted && <Launchpad open={sys.overlay === "launchpad"} />}
       {sys.overlay === "spotlight" && <Spotlight />}

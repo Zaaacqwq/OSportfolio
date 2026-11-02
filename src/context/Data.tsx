@@ -2,15 +2,19 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import type { GitHubData } from "@/lib/github";
+import type { TrackMeta } from "@/lib/spotify";
 
 export interface SiteData {
   github: GitHubData;
   assets: Record<string, string[]>;
+  /** Spotify track ID → 封面等信息 */
+  music: Record<string, TrackMeta>;
 }
 
 const Ctx = createContext<SiteData>({
   github: { repos: null, contributions: null, latestRelease: null },
   assets: {},
+  music: {},
 });
 
 export function DataProvider({ value, children }: { value: SiteData; children: ReactNode }) {

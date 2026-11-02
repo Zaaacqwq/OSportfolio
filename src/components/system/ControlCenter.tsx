@@ -4,6 +4,8 @@ import { useState, type ReactNode } from "react";
 import { LuBluetooth, LuMoon, LuSun, LuVolume2, LuWifi, LuAirplay, LuSunMedium, LuMoonStar, LuMonitor } from "react-icons/lu";
 import { useSystem } from "@/context/System";
 import { WALLPAPERS } from "@/lib/wallpapers";
+import { useNowPlaying } from "@/lib/music/store";
+import { Artwork, TransportControls } from "../music/MusicParts";
 
 function Module({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`rounded-[20px] bg-white/45 p-3 shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.6)] dark:bg-white/[0.08] dark:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.12)] ${className}`}>{children}</div>;
@@ -45,6 +47,24 @@ function Slider({ value, onChange, icon, label }: { value: number; onChange: (v:
   );
 }
 
+/** 正在播放：封面、歌名、上一首/播放/下一首；没有歌时点击打开 Music */
+function NowPlayingModule() {
+  const sys = useSystem();
+  const { track, isPaused } = useNowPlaying();
+  return (
+    <div className="flex items-center gap-3" data-cc="now-playing">
+      <button onClick={() => sys.open("music")} aria-label="Open Music" className="shrink-0">
+        <Artwork track={track} size={42} rounded={8} />
+      </button>
+      <button onClick={() => sys.open("music")} className="min-w-0 flex-1 text-left leading-tight">
+        <span className="block truncate text-[13px] font-semibold">{track ? track.title : "Not Playing"}</span>
+        <span className="block truncate text-[11.5px] text-muted">{track ? `${track.artist}${isPaused ? " · Paused" : ""}` : "Open Music"}</span>
+      </button>
+      <TransportControls size={15} btnClass="h-8 w-8 rounded-full hover:bg-black/10 dark:hover:bg-white/15" />
+    </div>
+  );
+}
+
 export function ControlCenter() {
   const sys = useSystem();
   const [wifi, setWifi] = useState(true);
@@ -79,6 +99,9 @@ export function ControlCenter() {
           </Module>
           <Module>
             <Toggle on={focus} icon={<LuMoonStar />} label="Focus" sub={focus ? "Do Not Disturb" : "Off"} onClick={() => setFocus(!focus)} />
+          </Module>
+          <Module className="col-span-2">
+            <NowPlayingModule />
           </Module>
           <Module className="col-span-2">
             <Slider label="Display" icon={<LuSunMedium />} value={bright} onChange={(v) => sys.setBrightness(0.4 + v * 0.6)} />
