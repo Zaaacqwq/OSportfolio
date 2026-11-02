@@ -122,20 +122,17 @@ a {
 .glass {
   background: var(--glass);
   backdrop-filter: blur(40px) saturate(190%);
-  -webkit-backdrop-filter: blur(40px) saturate(190%);
   box-shadow: inset 0 0 0 0.5px var(--glass-border), inset 0 1px 0 0 var(--glass-border), var(--shadow-pop);
 }
 .glass-strong {
   background: var(--glass-strong);
   backdrop-filter: blur(50px) saturate(190%);
-  -webkit-backdrop-filter: blur(50px) saturate(190%);
   box-shadow: inset 0 0 0 0.5px var(--glass-border), var(--shadow-pop);
 }
 
 .panel {
   background: color-mix(in srgb, var(--window) 94%, transparent);
   backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
   box-shadow: inset 0 0 0 0.5px var(--glass-border), 0 0 0 0.5px var(--glass-edge), 0 24px 70px rgba(0, 0, 0, 0.35);
 }
 
@@ -144,7 +141,6 @@ a {
   background: var(--menu);
   color: var(--menu-fg);
   backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
   border-radius: 12px;
   padding: 5px;
   box-shadow: inset 0 0 0 0.5px var(--glass-border), 0 0 0 0.5px var(--glass-edge), 0 12px 40px rgba(0, 0, 0, 0.25);
@@ -245,7 +241,6 @@ a {
 .dock {
   background: rgba(255, 255, 255, 0.22);
   backdrop-filter: blur(30px) saturate(200%);
-  -webkit-backdrop-filter: blur(30px) saturate(200%);
   box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.55),
     0 0 0 0.5px rgba(0, 0, 0, 0.12), 0 10px 40px rgba(0, 0, 0, 0.22);
   scrollbar-width: none;
@@ -314,7 +309,6 @@ a {
   background: var(--menu);
   color: var(--menu-fg);
   backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow: inset 0 0 0 0.5px var(--glass-border), 0 0 0 0.5px var(--glass-edge), 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 /* 两次递减的弹跳：起跳 ease-out，下落 ease-in，像受重力 */
@@ -483,7 +477,6 @@ a {
 .sidebar {
   background: var(--sidebar);
   backdrop-filter: blur(30px) saturate(180%);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
   border-radius: 13px;
   margin: 7px 0 7px 7px;
   box-shadow: inset 0 0 0 0.5px var(--glass-border), 0 0 0 0.5px var(--separator), 0 2px 10px rgba(0, 0, 0, 0.05);
@@ -696,7 +689,6 @@ a {
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(30px) saturate(180%);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
   box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4),
     0 8px 30px rgba(0, 0, 0, 0.12);
   color: #1d1d1f;
@@ -739,18 +731,62 @@ a {
 .fade-in {
   animation: fade-in 0.2s ease-out;
 }
-@keyframes zoom-in {
-  from {
-    opacity: 0;
-    transform: scale(1.08);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+/* Launchpad：背景层只改自身 opacity（模糊半径不变），内容层只改 transform/opacity，全部可中途反向 */
+/* 关闭时内容层仍保持栅格化（透明 + 常驻合成层），打开时不必现场绘制 33 个图标；
+   背景模糊层在关闭时隐藏，避免一直计算模糊 */
+.lp-root[data-state="closed"],
+.lp-root[data-state="closing"] {
+  pointer-events: none;
 }
-.launchpad-in {
-  animation: zoom-in 0.25s cubic-bezier(0.25, 1, 0.3, 1);
+.lp-root[data-state="closed"] .lp-backdrop {
+  visibility: hidden;
+}
+.lp-backdrop {
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(36px) saturate(150%);
+  opacity: 0;
+  transition: opacity 200ms ease-in;
+}
+.lp-content {
+  opacity: 0;
+  transform: scale(1.1);
+  transition: opacity 200ms ease-in, transform 240ms cubic-bezier(0.4, 0, 1, 1);
+}
+.lp-content {
+  will-change: transform, opacity;
+}
+.lp-root[data-state="open"] .lp-backdrop {
+  opacity: 1;
+  transition: opacity 280ms ease-out;
+}
+.lp-root[data-state="open"] .lp-content {
+  opacity: 1;
+  transform: none;
+  transition: opacity 280ms ease-out, transform 380ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.lp-root[data-state="closing"] .lp-content {
+  transform: scale(1.08);
+}
+.lp-track {
+  will-change: transform;
+}
+.lp-tile .lp-icon {
+  display: block;
+  transition: transform 120ms ease-out;
+}
+.lp-tile:active .lp-icon {
+  transform: scale(0.92);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-content,
+  .lp-root[data-state="open"] .lp-content,
+  .lp-root[data-state="closing"] .lp-content {
+    transform: none !important;
+  }
+  .lp-backdrop,
+  .lp-content {
+    transition-duration: 150ms !important;
+  }
 }
 @keyframes spotlight-in {
   from {

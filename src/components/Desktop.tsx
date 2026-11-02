@@ -37,6 +37,7 @@ export function Desktop() {
   const [rect, setRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const iconRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const welcomed = useRef(false);
+  const [lpMounted, setLpMounted] = useState(false);
 
   const wp = getWallpaper(sys.wallpaper);
   const background = sys.appearance === "dark" ? wp.dark : wp.light;
@@ -92,6 +93,23 @@ export function Desktop() {
     );
     return () => clearTimeout(t1);
   }, [sys.locked, booting, isMobile, sys]);
+
+  // Launchpad 在空闲时预挂载，第一次打开也不用现场生成图标
+  useEffect(() => {
+    if (lpMounted) return;
+    if (sys.overlay === "launchpad") {
+      setLpMounted(true);
+      return;
+    }
+    if (sys.locked || booting) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(() => setLpMounted(true), { timeout: 2500 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(() => setLpMounted(true), 1200);
+    return () => clearTimeout(t);
+  }, [lpMounted, sys.overlay, sys.locked, booting]);
 
   // 全局快捷键
   useEffect(() => {
@@ -239,7 +257,7 @@ export function Desktop() {
       <MenuBar onRestart={restart} />
       <Dock />
 
-      {sys.overlay === "launchpad" && <Launchpad />}
+      {lpMounted && <Launchpad open={sys.overlay === "launchpad"} />}
       {sys.overlay === "spotlight" && <Spotlight />}
       {sys.overlay === "control" && <ControlCenter />}
       {sys.overlay === "notifications" && <NotificationCenter />}
