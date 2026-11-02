@@ -16,15 +16,19 @@ export function Avatar({ size = 40, className = "" }: { size?: number; className
   }
   return (
     <span
-      className={`grid shrink-0 place-items-center rounded-full font-bold text-white ${className}`}
+      className={`grid shrink-0 place-items-center rounded-full font-semibold text-white ${className}`}
       style={{
         width: size,
         height: size,
-        fontSize: size * 0.42,
-        background: "linear-gradient(135deg,#4f8bff,#1d4ed8)",
+        fontSize: size * 0.4,
+        background: "linear-gradient(160deg,#a5b4c8,#6b7a90)",
+        letterSpacing: "-0.02em",
       }}
     >
-      {profile.initials}
+      {profile.name
+        .split(" ")
+        .map((s) => s[0])
+        .join("")}
     </span>
   );
 }

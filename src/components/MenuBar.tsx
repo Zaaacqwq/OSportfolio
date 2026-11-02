@@ -1,100 +1,115 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LuBatteryFull, LuMail, LuSearch, LuWifi } from "react-icons/lu";
-import { profile } from "@/config/profile";
-import { APPS } from "@/lib/apps";
-import { useWindowManager } from "@/context/WindowManager";
-import { Avatar } from "./Avatar";
+import { LuBatteryFull, LuSearch, LuWifi } from "react-icons/lu";
+import { useSystem } from "@/context/System";
+import { appMenus, logoMenu } from "@/lib/menus";
+import { MenuList } from "./system/MenuList";
+import { Notch } from "./system/Notch";
+import { ZLogo } from "./icons/ZLogo";
 
-function useClock() {
+export function useClock(interval = 1000) {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
     setNow(new Date());
-    const t = setInterval(() => setNow(new Date()), 1000 * 15);
+    const t = setInterval(() => setNow(new Date()), interval);
     return () => clearInterval(t);
-  }, []);
+  }, [interval]);
   return now;
 }
 
+/** 控制中心图标（两个开关） */
+function ControlCenterGlyph() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <rect x="1.5" y="2.5" width="13" height="4.5" rx="2.25" />
+      <circle cx="11.75" cy="4.75" r="1.2" fill="currentColor" stroke="none" />
+      <rect x="1.5" y="9" width="13" height="4.5" rx="2.25" />
+      <circle cx="4.25" cy="11.25" r="1.2" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function MenuBar({ onRestart }: { onRestart: () => void }) {
+  const sys = useSystem();
   const now = useClock();
-  const { activeId, open, close } = useWindowManager();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [openMenu, setOpenMenu] = useState<number | null>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const { appName, menus } = appMenus(sys, sys.activeId);
+
+  const all = [{ title: "__logo", items: logoMenu(sys, onRestart) }, ...menus];
 
   useEffect(() => {
-    if (!menuOpen) return;
+    if (openMenu === null) return;
     const onDown = (e: PointerEvent) => {
-      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
+      if (!barRef.current?.contains(e.target as Node)) setOpenMenu(null);
     };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenMenu(null);
     window.addEventListener("pointerdown", onDown);
-    return () => window.removeEventListener("pointerdown", onDown);
-  }, [menuOpen]);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [openMenu]);
 
-  const date = now?.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-  const time = now?.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
-
-  const items: { label: string; action?: () => void; divider?: boolean }[] = [
-    { label: "About Me", action: () => open("about") },
-    { label: "System Settings…", action: () => open("settings") },
-    { label: "", divider: true },
-    { label: "Open Terminal", action: () => open("terminal") },
-    { label: "Close Window", action: () => activeId && close(activeId) },
-    { label: "", divider: true },
-    { label: "Restart…", action: onRestart },
-  ];
+  const date = now
+    ? `${now.toLocaleDateString("en-US", { weekday: "short" })} ${now.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+    : "";
+  const time = now ? now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : "";
 
   return (
-    <header className="menubar fixed inset-x-0 top-0 z-[9000] flex h-7 items-center justify-between px-3 text-[13px] text-white sm:px-4">
-      <div className="flex min-w-0 items-center gap-1" ref={menuRef}>
-        <button
-          onClick={() => setMenuOpen((v) => !v)}
-          className={`flex items-center gap-2 rounded px-1.5 py-0.5 ${menuOpen ? "bg-white/20" : "hover:bg-white/10"}`}
-        >
-          <Avatar size={18} />
-          <span className="truncate font-semibold">{profile.name}</span>
-        </button>
-        {activeId && (
-          <span className="hidden px-2 font-medium opacity-90 sm:inline">{APPS[activeId].title}</span>
-        )}
-        {menuOpen && (
-          <div className="glass-menu absolute left-2 top-7 w-56 rounded-lg p-1 text-[13px]">
-            {items.map((it, i) =>
-              it.divider ? (
-                <div key={i} className="mx-2 my-1 h-px bg-white/15" />
-              ) : (
-                <button
-                  key={i}
-                  onClick={() => {
-                    it.action?.();
-                    setMenuOpen(false);
-                  }}
-                  className="block w-full rounded-md px-3 py-1 text-left hover:bg-[#2f6fed]"
-                >
-                  {it.label}
-                </button>
-              ),
+    <header className="menubar fixed inset-x-0 top-0 z-[9000] flex h-[26px] items-center px-2 text-[13px]" ref={barRef}>
+      <nav className="flex min-w-0 items-center" aria-label="Menu bar">
+        {all.map((m, i) => (
+          <div key={m.title} className="relative">
+            <button
+              className={`menubar-item ${i === 1 ? "font-bold" : ""} ${i > 1 ? "hidden md:inline-flex" : ""}`}
+              data-open={openMenu === i ? "true" : undefined}
+              aria-label={i === 0 ? "Main menu" : undefined}
+              onClick={() => setOpenMenu(openMenu === i ? null : i)}
+              onMouseEnter={() => openMenu !== null && setOpenMenu(i)}
+            >
+              {i === 0 ? <ZLogo size={15} /> : i === 1 ? appName : m.title}
+            </button>
+            {openMenu === i && (
+              <div className="absolute left-0 top-[24px] text-shadow-none" style={{ textShadow: "none" }}>
+                <MenuList items={m.items} onDone={() => setOpenMenu(null)} />
+              </div>
             )}
           </div>
-        )}
-      </div>
+        ))}
+      </nav>
 
-      <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-        <a
-          href={`mailto:${profile.email}`}
-          className="hidden items-center gap-1.5 opacity-95 hover:opacity-100 md:flex"
-        >
-          <LuMail className="text-[14px]" />
-          {profile.email}
-        </a>
-        <LuWifi className="hidden text-[15px] sm:block" />
-        <LuBatteryFull className="hidden text-[18px] sm:block" />
-        <button aria-label="Search" onClick={() => open("terminal")} className="hidden sm:block">
+      <Notch />
+
+      <div className="ml-auto flex shrink-0 items-center">
+        <span className="menubar-item hidden lg:inline-flex">
+          <LuBatteryFull className="text-[19px]" />
+        </span>
+        <span className="menubar-item hidden sm:inline-flex">
+          <LuWifi className="text-[15px]" />
+        </span>
+        <button className="menubar-item" aria-label="Spotlight" onClick={() => sys.toggleOverlay("spotlight")}>
           <LuSearch className="text-[14px]" />
         </button>
-        <span className="hidden sm:inline">{date}</span>
-        <span className="tabular-nums">{time}</span>
+        <button
+          className="menubar-item"
+          aria-label="Control Center"
+          data-open={sys.overlay === "control" ? "true" : undefined}
+          onClick={() => sys.toggleOverlay("control")}
+        >
+          <ControlCenterGlyph />
+        </button>
+        <button
+          className="menubar-item tabular-nums"
+          aria-label="Notification Center"
+          data-open={sys.overlay === "notifications" ? "true" : undefined}
+          onClick={() => sys.toggleOverlay("notifications")}
+        >
+          <span className="hidden sm:inline">{date}</span>
+          <span className="ml-1.5">{time}</span>
+        </button>
       </div>
     </header>
   );

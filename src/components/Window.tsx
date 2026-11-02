@@ -1,29 +1,44 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { APPS } from "@/lib/apps";
-import { MENU_BAR_H, useWindowManager, type Rect, type WindowState } from "@/context/WindowManager";
-import { useIsMobile } from "@/lib/useIsMobile";
+import { MENU_BAR_H, useSystem, type Rect, type WindowState } from "@/context/System";
+import { WindowCtx, type WindowCtxValue } from "./chrome/WindowChrome";
 
-const MIN_W = 320;
-const MIN_H = 220;
+const MIN_W = 360;
+const MIN_H = 260;
 
 type Edge = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 
+/** 找到 Dock 里对应图标的中心点（最小化动画的终点） */
+function dockTarget(id: string) {
+  const el = document.querySelector<HTMLElement>(`[data-dock-id="${id}"]`) ?? document.querySelector<HTMLElement>("[data-dock]");
+  if (!el) return { x: window.innerWidth / 2, y: window.innerHeight - 30 };
+  const r = el.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+
 export function Window({ win }: { win: WindowState }) {
   const app = APPS[win.id];
-  const { close, focus, minimize, toggleMaximize, move, activeId } = useWindowManager();
-  const isMobile = useIsMobile();
+  const sys = useSystem();
+  const { close, focus, minimize, toggleMaximize, move, activeId } = sys;
   const active = activeId === win.id;
+  const resizable = app.resizable !== false;
   const [closing, setClosing] = useState(false);
   const [interacting, setInteracting] = useState(false);
+  const [opening, setOpening] = useState(true);
+  const [minTarget, setMinTarget] = useState<{ x: number; y: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
-
-  // 拖动/缩放期间直接操作 DOM，松手时再写回状态，保证 60fps
   const live = useRef<Rect>({ x: win.x, y: win.y, w: win.w, h: win.h });
+
   useEffect(() => {
     live.current = { x: win.x, y: win.y, w: win.w, h: win.h };
   }, [win.x, win.y, win.w, win.h]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setOpening(false), 420);
+    return () => clearTimeout(t);
+  }, [win.openKey]);
 
   const apply = (r: Rect) => {
     const el = ref.current;
@@ -34,29 +49,28 @@ export function Window({ win }: { win: WindowState }) {
     el.style.height = `${r.h}px`;
   };
 
-  const startDrag = useCallback(
+  const onDragStart = useCallback(
     (e: ReactPointerEvent) => {
-      if (isMobile || e.button !== 0) return;
-      if ((e.target as HTMLElement).closest("button")) return;
+      if (e.button !== 0) return;
       focus(win.id);
       const startX = e.clientX;
       const startY = e.clientY;
-      // 从最大化状态拖出来时，先还原尺寸并让窗口跟随鼠标
       let origin = { ...live.current };
-      if (win.maximized && win.restore) {
-        const ratio = (startX - origin.x) / origin.w;
-        origin = {
-          ...win.restore,
-          x: startX - win.restore.w * ratio,
-          y: MENU_BAR_H,
-        };
-      }
+      let detached = false;
       setInteracting(true);
       const onMove = (ev: PointerEvent) => {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        // 从最大化状态拖出：先还原尺寸，让窗口保持在鼠标下
+        if (win.maximized && win.restore && !detached && Math.hypot(dx, dy) > 4) {
+          detached = true;
+          const ratio = (startX - origin.x) / origin.w;
+          origin = { ...win.restore, x: startX - win.restore.w * ratio, y: MENU_BAR_H };
+        }
         const vw = window.innerWidth;
         const vh = window.innerHeight;
-        const x = Math.min(Math.max(origin.x + ev.clientX - startX, 80 - origin.w), vw - 80);
-        const y = Math.min(Math.max(origin.y + ev.clientY - startY, MENU_BAR_H), vh - 40);
+        const x = Math.min(Math.max(origin.x + dx, 60 - origin.w), vw - 60);
+        const y = Math.min(Math.max(origin.y + dy, MENU_BAR_H), vh - 50);
         live.current = { ...origin, x, y };
         apply(live.current);
       };
@@ -64,12 +78,13 @@ export function Window({ win }: { win: WindowState }) {
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
         setInteracting(false);
-        move(win.id, { ...live.current });
+        const r = live.current;
+        if (r.x !== win.x || r.y !== win.y || r.w !== win.w || r.h !== win.h) move(win.id, { ...r });
       };
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
     },
-    [focus, move, win.id, win.maximized, win.restore, isMobile],
+    [focus, move, win.id, win.maximized, win.restore, win.x, win.y, win.w, win.h],
   );
 
   const startResize = (edge: Edge) => (e: ReactPointerEvent) => {
@@ -91,8 +106,7 @@ export function Window({ win }: { win: WindowState }) {
         x = o.x + (o.w - w);
       }
       if (edge.includes("n")) {
-        const maxDy = o.y - MENU_BAR_H;
-        h = Math.max(MIN_H, o.h - Math.max(dy, -maxDy));
+        h = Math.max(MIN_H, o.h - Math.max(dy, MENU_BAR_H - o.y));
         y = o.y + (o.h - h);
       }
       live.current = { x, y, w, h };
@@ -108,75 +122,81 @@ export function Window({ win }: { win: WindowState }) {
     window.addEventListener("pointerup", onUp);
   };
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setClosing(true);
-    setTimeout(() => close(win.id), 160);
-  };
+    setTimeout(() => close(win.id), 170);
+  }, [close, win.id]);
+
+  const handleMinimize = useCallback(() => {
+    setMinTarget(dockTarget(win.id));
+    minimize(win.id);
+  }, [minimize, win.id]);
+
+  const ctx = useMemo<WindowCtxValue>(
+    () => ({
+      id: win.id,
+      active,
+      maximized: win.maximized,
+      resizable,
+      mobile: false,
+      close: handleClose,
+      minimize: handleMinimize,
+      zoom: () => resizable && toggleMaximize(win.id),
+      onDragStart,
+    }),
+    [win.id, active, win.maximized, resizable, handleClose, handleMinimize, toggleMaximize, onDragStart],
+  );
 
   const Content = app.component;
-  const dark = app.theme === "dark";
 
-  const style = isMobile
-    ? { left: 0, top: MENU_BAR_H, width: "100%", height: `calc(100dvh - ${MENU_BAR_H}px - 76px)`, zIndex: win.z }
-    : { left: win.x, top: win.y, width: win.w, height: win.h, zIndex: win.z };
+  // 打开动画从 Dock 图标放大；最小化动画缩向 Dock 图标
+  const style: CSSProperties & Record<string, string | number> = {
+    left: win.x,
+    top: win.y,
+    width: win.w,
+    height: win.h,
+    zIndex: win.z,
+  };
+  if (win.origin) {
+    style["--origin-x"] = `${win.origin.x - win.x}px`;
+    style["--origin-y"] = `${win.origin.y - win.y}px`;
+  }
+  if (win.minimized) {
+    const t = minTarget ?? dockTarget(win.id);
+    style["--origin-x"] = "50%";
+    style["--origin-y"] = "50%";
+    style["--min-x"] = `${t.x - (win.x + win.w / 2)}px`;
+    style["--min-y"] = `${t.y - (win.y + win.h / 2)}px`;
+  }
 
   return (
-    <div
-      ref={ref}
-      role="dialog"
-      aria-label={app.title}
-      onPointerDown={() => focus(win.id)}
-      className={[
-        "window absolute flex flex-col overflow-hidden",
-        isMobile ? "rounded-none" : "rounded-xl",
-        dark ? "window-dark" : "window-light",
-        active ? "window-active" : "",
-        closing ? "window-closing" : "window-opening",
-        win.minimized ? "window-minimized" : "",
-        interacting ? "select-none" : "",
-        !interacting && !isMobile ? "window-animate" : "",
-      ].join(" ")}
-      style={style}
-    >
-      {/* 标题栏 */}
+    <WindowCtx.Provider value={ctx}>
       <div
-        className="titlebar relative flex h-10 shrink-0 items-center px-3"
-        onPointerDown={startDrag}
-        onDoubleClick={() => !isMobile && toggleMaximize(win.id)}
+        ref={ref}
+        role="dialog"
+        aria-label={app.name}
+        data-window={win.id}
+        onPointerDown={() => focus(win.id)}
+        className={[
+          "window absolute flex flex-col overflow-hidden",
+          active ? "window-active" : "",
+          win.maximized ? "is-maximized" : "",
+          closing ? "window-closing" : opening ? "window-opening" : "",
+          win.minimized ? "window-minimized" : "",
+          interacting ? "select-none" : "window-animate",
+        ].join(" ")}
+        style={style}
       >
-        <div className="traffic group flex items-center gap-2">
-          <button aria-label="Close" className="light light-close" onClick={handleClose}>
-            <svg viewBox="0 0 10 10"><path d="M3 3l4 4M7 3l-4 4" /></svg>
-          </button>
-          <button aria-label="Minimize" className="light light-min" onClick={() => minimize(win.id)}>
-            <svg viewBox="0 0 10 10"><path d="M2.5 5h5" /></svg>
-          </button>
-          <button
-            aria-label="Zoom"
-            className="light light-max"
-            onClick={() => !isMobile && toggleMaximize(win.id)}
-          >
-            <svg viewBox="0 0 10 10"><path d="M3 7V3.6L6.4 7zM7 3v3.4L3.6 3z" fill="currentColor" stroke="none" /></svg>
-          </button>
-        </div>
-        <div className="pointer-events-none absolute inset-x-0 text-center text-[13px] font-semibold opacity-80">
-          {app.title}
-        </div>
-      </div>
+        <div className="relative flex min-h-0 flex-1 flex-col">{Content ? <Content params={win.params} /> : null}</div>
 
-      {/* 内容 */}
-      <div className="window-body relative min-h-0 flex-1 overflow-auto">
-        {Content ? <Content params={win.params} /> : null}
+        {resizable && !win.maximized && (
+          <>
+            {(["n", "s", "e", "w", "ne", "nw", "se", "sw"] as Edge[]).map((edge) => (
+              <div key={edge} className={`resize resize-${edge}`} onPointerDown={startResize(edge)} />
+            ))}
+          </>
+        )}
       </div>
-
-      {/* 缩放手柄 */}
-      {!isMobile && !win.maximized && (
-        <>
-          {(["n", "s", "e", "w", "ne", "nw", "se", "sw"] as Edge[]).map((edge) => (
-            <div key={edge} className={`resize resize-${edge}`} onPointerDown={startResize(edge)} />
-          ))}
-        </>
-      )}
-    </div>
+    </WindowCtx.Provider>
   );
 }
